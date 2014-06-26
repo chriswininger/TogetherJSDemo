@@ -60,7 +60,10 @@
             TogetherJS.send({type: "syncBall", x: ball.x, y: ball.y });
         }*/
 
-        // click event
+        // click events
+        $('#btnMessage').click(function () {
+           alert('message: ' + $('#txtMessage').val());
+        });
         $('#cvsGame').click(function (e) {
             var coordinate = _getMousePosAlt(canvas, e),
                 x = coordinate.x,
