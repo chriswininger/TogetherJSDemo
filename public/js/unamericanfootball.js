@@ -64,6 +64,14 @@
         $('#btnMessage').click(function () {
            alert('message: ' + $('#txtMessage').val());
         });
+
+        $('#bntRecenter').click(function () {
+            centerBall();
+            if (TogetherJS.running) {
+                TogetherJS.send({type: "syncBall", x: ball.x, y: ball.y });
+            }
+        });
+
         $('#cvsGame').click(function (e) {
             var coordinate = _getMousePosAlt(canvas, e),
                 x = coordinate.x,
@@ -114,15 +122,13 @@
     }
 
     function centerBall() {
+        dx = 0;
+        dy = 0;
         ball.x = (canvas.width/2) - radius;
         ball.y = (canvas.height/2) - radius;
     }
 
     function handleClick(x, y) {
-        console.log('x: ' + x + ' y: ' + y);
-
-        console.log('x: ' + x + ' y: ' + y);
-
         var ballCenterX = ball.x + radius,
             ballCenterY = ball.y + radius;
 
@@ -188,8 +194,8 @@
 
         if (ball.y <= 0) {
             ball.y = 0.5;
-        } else if (ball.y + radius >= canvas.height) {
-            ball.y = canvas.height - radius - 0.5;
+        } else if (ball.y + (radius*2) >= canvas.height) {
+            ball.y = canvas.height - (radius*2) - 0.5;
         }
     }
 
