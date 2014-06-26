@@ -1,6 +1,6 @@
 var express = require('express');
 
-var port = 3000,
+var port = 3007,
     projectUrl = '/';
 
 var app = new express();
