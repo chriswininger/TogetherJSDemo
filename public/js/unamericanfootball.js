@@ -1,7 +1,9 @@
 (function () {
     var radius = 10,
         dx = 0,
-        dy = 0;
+        dy = 0,
+        scoreLeft = 0,
+        scoreRight = 0;
 
     var canvas = null,
         ctx = null,
@@ -12,12 +14,35 @@
       y: 0
     };
 
+    var goalLeft = {
+        x: 0,
+        y: 0,
+        width: 50,
+        height: 100,
+        color: '#F5F5F5'
+    };
+
+    var goalRight = {
+        x: 0,
+        y: 0,
+        width: 50,
+        height: 100,
+        color: '#F5F5F5'
+    };
+
+    var lblScoreRight = null,
+        lblScoreLeft = null;
+
     $(function () {
         canvas = document.getElementById('cvsGame');
         ctx = canvas.getContext('2d');
 
-        ball.x = (canvas.width/2) - radius;
-        ball.y = (canvas.height/2) - radius;
+        // initial positions
+        centerBall();
+        goalLeft.y = (canvas.height/2) - (goalLeft.height/2);
+        goalRight.y = (canvas.height/2) - (goalRight.height/2);
+        goalRight.x = canvas.width - goalRight.width;
+
 
         // load the ball image
         imgBall.onload = function(){
@@ -26,33 +51,88 @@
         };
         imgBall.src = '/images/ball_small.png';
 
+        lblScoreRight = $('#scoreRight');
+        lblScoreLeft = $('#scoreLeft');
+        lblScoreLeft.text(scoreLeft);
+        lblScoreRight.text(scoreRight);
+
+
         // click event
         $('#cvsGame').click(function (e) {
-            var coordinate = _getMousePos(canvas, e),
-                x = coordinate.x,
-                y = coordinate.y;
-
-            var ballCenterX = ball.x + radius,
-                ballCenterY = ball.y + radius;
-
-            var a = Math.abs(x - ballCenterX),
-                b = Math.abs(y - ballCenterY),
-                c = Math.sqrt(Math.pow(a,2) + Math.pow(b,2));
-
-            if (c < (radius + 30)) {
-                dx = dx + _map(ballCenterX - x, -30, 30, -2.5, 2.5);
-                dy = dy + _map(ballCenterY - y, -30, 30, -2.5, 2.5);
-                //ball.x += 40;
-                ctx.drawImage(imgBall, ball.x, ball.y); // Or at whatever offset you like
+            handleClick(e.clientX, e.clientY);
+            if (TogetherJS.running) {
+                TogetherJS.send({type: "updateBall", x: e.clientX, y: e.clientY});
             }
         });
+
+
+        TogetherJS.hub.on("updateBall", function (msg) {
+            if (!msg.sameUrl) return;
+            handleClick(msg.x, msg.y);
+        });
+
+        TogetherJS.hub.on("syncBall", function (msg) {
+            if (!msg.sameUrl) return;
+            ball.x = msg.x;
+            ball.y = msg.y;
+        });
+
+        /*setInterval(function () {
+            if (TogetherJS.running) {
+                TogetherJS.send({type: "syncBall", x: ball.x, y: ball.y });
+            }
+        }, 1000);*/
     });
 
     function animationLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(imgBall, ball.x, ball.y);
+        drawGoals();
         updateBall();
+        score();
         requestAnimationFrame(animationLoop);
+    }
+
+    function centerBall() {
+        ball.x = (canvas.width/2) - radius;
+        ball.y = (canvas.height/2) - radius;
+    }
+
+    function handleClick(x, y) {
+        var coordinate = _getMousePos(canvas, x, y),
+            x = coordinate.x,
+            y = coordinate.y;
+
+        var ballCenterX = ball.x + radius,
+            ballCenterY = ball.y + radius;
+
+        var a = Math.abs(x - ballCenterX),
+            b = Math.abs(y - ballCenterY),
+            c = Math.sqrt(Math.pow(a,2) + Math.pow(b,2));
+
+        // check close enough
+        if (c < (radius + 30)) {
+            // update dx and dy
+            dx = dx + _map(ballCenterX - x, -30, 30, -2.5, 2.5);
+            dy = dy + _map(ballCenterY - y, -30, 30, -2.5, 2.5);
+        }
+    }
+
+    function drawGoals () {
+        ctx.strokeStyle = goalLeft.color;
+        ctx.strokeRect(goalLeft.x, goalLeft.y, goalLeft.width, goalLeft.height);
+        ctx.strokeStyle = goalRight.color;
+        ctx.strokeRect(goalRight.x, goalRight.y, goalRight.width, goalRight.height);
+    }
+
+    function score() {
+        if (ball.x < goalLeft.width && (ball.y > goalLeft.y && ball.y < (goalLeft.y + goalLeft.height))) {
+            lblScoreLeft.text(++scoreLeft);
+           centerBall();
+        } else if (ball.x > (canvas.width - goalRight.width) && (ball.y > goalRight.y && ball.y < (goalRight.y + goalRight.height))){
+            lblScoreRight.text(++scoreRight);
+            centerBall();
+        }
     }
 
     function updateBall() {
@@ -94,11 +174,11 @@
     }
 
     // ---- Helpers ----
-    function _getMousePos(canvas, evt) {
+    function _getMousePos(canvas, x, y) {
         var rect = canvas.getBoundingClientRect();
         return {
-            x: evt.clientX - rect.left,
-            y: evt.clientY - rect.top
+            x: x - rect.left,
+            y: y - rect.top
         };
     }
 
