@@ -56,18 +56,29 @@
         lblScoreLeft.text(scoreLeft);
         lblScoreRight.text(scoreRight);
 
+        /*if (TogetherJS.running) {
+            TogetherJS.send({type: "syncBall", x: ball.x, y: ball.y });
+        }*/
 
         // click event
         $('#cvsGame').click(function (e) {
-            handleClick(e.clientX, e.clientY);
+            var coordinate = _getMousePosAlt(canvas, e),
+                x = coordinate.x,
+                y = coordinate.y;
+
+
             if (TogetherJS.running) {
-                TogetherJS.send({type: "updateBall", x: e.clientX, y: e.clientY});
+                TogetherJS.send({type: "updateBall", x: x, y: y, ballX: ball.x, ballY: ball.y });
             }
+            handleClick(x, y);
+
         });
 
 
         TogetherJS.hub.on("updateBall", function (msg) {
             if (!msg.sameUrl) return;
+            ball.x = msg.ballX;
+            ball.y = msg.ballY;
             handleClick(msg.x, msg.y);
         });
 
@@ -75,6 +86,12 @@
             if (!msg.sameUrl) return;
             ball.x = msg.x;
             ball.y = msg.y;
+        });
+
+        TogetherJS.hub.on("syncScore", function (msg) {
+            if (!msg.sameUrl) return;
+            scoreLeft = msg.scoreLeft;
+            scoreRight = msg.scoreRight;
         });
 
         /*setInterval(function () {
@@ -99,9 +116,9 @@
     }
 
     function handleClick(x, y) {
-        var coordinate = _getMousePos(canvas, x, y),
-            x = coordinate.x,
-            y = coordinate.y;
+        console.log('x: ' + x + ' y: ' + y);
+
+        console.log('x: ' + x + ' y: ' + y);
 
         var ballCenterX = ball.x + radius,
             ballCenterY = ball.y + radius;
@@ -181,6 +198,28 @@
             y: y - rect.top
         };
     }
+
+    function _getMousePosAlt(canvas, e) {
+        var x;
+        var y;
+        if (e.pageX || e.pageY) {
+            x = e.pageX;
+            y = e.pageY;
+        }
+        else {
+            x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+            y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+        }
+        x -= canvas.offsetLeft;
+        y -= canvas.offsetTop;
+
+
+        return {
+            x: x,
+            y: y
+        }
+    }
+
 
     function _map (val, x1, x2, y1, y2) {
         return (val -x1)/(Math.abs(x2-x1)) * Math.abs(y2 -y1) + y1;
