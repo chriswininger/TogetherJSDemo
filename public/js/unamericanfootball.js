@@ -77,14 +77,19 @@
                 x = coordinate.x,
                 y = coordinate.y;
 
-
-            if (TogetherJS.running) {
-                TogetherJS.send({type: "updateBall", x: x, y: y, ballX: ball.x, ballY: ball.y });
-            }
+            sendBallState(x, y);
             handleClick(x, y);
 
         });
 
+
+        TogetherJS.hub.on("togetherjs.hello", function (msg) {
+            if (! msg.sameUrl) {
+                return;
+            }
+            sendFullState();
+            sendScore();
+        });
 
         TogetherJS.hub.on("updateBall", function (msg) {
             if (!msg.sameUrl) return;
@@ -97,12 +102,17 @@
             if (!msg.sameUrl) return;
             ball.x = msg.x;
             ball.y = msg.y;
+            dx = msg.dx;
+            dy = msg.dy;
         });
 
         TogetherJS.hub.on("syncScore", function (msg) {
             if (!msg.sameUrl) return;
             scoreLeft = msg.scoreLeft;
             scoreRight = msg.scoreRight;
+
+            lblScoreLeft.text(scoreLeft);
+            lblScoreRight.text(scoreRight);
         });
 
         /*setInterval(function () {
@@ -196,6 +206,24 @@
             ball.y = 0.5;
         } else if (ball.y + (radius*2) >= canvas.height) {
             ball.y = canvas.height - (radius*2) - 0.5;
+        }
+    }
+
+    function sendBallState(clickX, clickY) {
+        if (TogetherJS.running) {
+            TogetherJS.send({type: "updateBall", x: clickX, y: clickY, ballX: ball.x, ballY: ball.y });
+        }
+    }
+
+    function sendFullState() {
+        if (TogetherJS.running) {
+            TogetherJS.send({type: "syncBall", x: ball.x, y: ball.y, dx: dx, dy: dy });
+        }
+    }
+
+    function sendScore() {
+        if (TogetherJS.running) {
+            TogetherJS.send({ type: 'syncScore', scoreLeft: scoreLeft, scoreRight: scoreRight });
         }
     }
 
